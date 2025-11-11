@@ -1,5 +1,5 @@
 //
-//  NFKBootstrap.swift
+//  NMBootstrap.swift
 //  NIOMeasure
 //
 //  Created by Vinzenz Weist on 13.04.25.
@@ -9,12 +9,12 @@ import NIOCore
 import NIOPosix
 import Foundation
 
-internal struct NFKBootstrap: Sendable {
+internal struct NMBootstrap: Sendable {
     private let host: String
     private let port: Int
     private let group: MultiThreadedEventLoopGroup
     
-    /// Create instance of `NFKBootstrap`
+    /// Create instance of `NMBootstrap`
     ///
     /// - Parameters:
     ///   - host: the host address as `String`
@@ -29,19 +29,21 @@ internal struct NFKBootstrap: Sendable {
     /// Starts the bootstrap and binds the server to port and address.
     ///
     /// - Parameter completion: contains callback with parsed data and outbound writer.
-    internal func run(_ completion: @escaping @Sendable (NFKMessage, NIOAsyncChannelOutboundWriter<ByteBuffer>) async -> Void) async throws {
+    internal func run(_ completion: @escaping @Sendable (NMMessage, NIOAsyncChannelOutboundWriter<ByteBuffer>) async -> Void) async throws {
         let bootstrap = try await ServerBootstrap(group: self.group)
             .serverChannelOption(.socketOption(.so_reuseaddr), value: 1)
             .bind(host: self.host, port: self.port) { channel in
                 channel.eventLoop.makeCompletedFuture {
+                    let timer = channel.eventLoop.scheduleTask(in: .seconds(60)) { channel.close(promise: nil) }
+                    channel.closeFuture.whenComplete { _ in timer.cancel() }
                     return try NIOAsyncChannel(
                         wrappingChannelSynchronously: channel,
                         configuration: NIOAsyncChannel.Configuration(inboundType: ByteBuffer.self, outboundType: ByteBuffer.self)
                     )
                 }
             }
-        
-        print("[Server]: Started, listening on \(self.host):\(self.port)")
+        print(String.logo)
+        print("[Info]: Started, listening on \(self.host):\(self.port)")
         try await withThrowingDiscardingTaskGroup { group in
             try await bootstrap.executeThenClose { inbound in
                 for try await channel in inbound {
@@ -56,29 +58,32 @@ internal struct NFKBootstrap: Sendable {
     /// Send data on specific connection.
     ///
     /// - Parameters:
-    ///   - message: the `NFKMessage` to send
+    ///   - message: the `NMMessage` to send
     ///   - outbound: the specific `NIOAsyncChannelOutboundWriter`
-    internal func send(_ message: NFKMessage, _ outbound: NIOAsyncChannelOutboundWriter<ByteBuffer>) async {
+    internal func send(_ message: NMMessage, _ outbound: NIOAsyncChannelOutboundWriter<ByteBuffer>) async {
         do {
-            let frame = try await NFKFramer.create(message: message)
+            let frame = try await NMFramer.create(message: message)
             try await outbound.write(.init(bytes: frame))
         } catch {
-            print("Send error: \(error)")
+            print("[Error]: \(error)")
         }
     }
 }
 
 // MARK: - Private API -
 
-private extension NFKBootstrap {
+private extension NMBootstrap {
     /// Connection handler for each individual connection.
     ///
     /// - Parameters:
     ///   - channel: the `NIOAsyncChannel`
-    ///   - completion: the parsed `NFKMessage` and `NIOAsyncChannelOutboundWriter`
-    private func connection(channel: NIOAsyncChannel<ByteBuffer, ByteBuffer>, completion: @escaping @Sendable (NFKMessage, NIOAsyncChannelOutboundWriter<ByteBuffer>) async -> Void) async {
+    ///   - completion: the parsed `NMMessage` and `NIOAsyncChannelOutboundWriter`
+    private func connection(channel: NIOAsyncChannel<ByteBuffer, ByteBuffer>, completion: @escaping @Sendable (NMMessage, NIOAsyncChannelOutboundWriter<ByteBuffer>) async -> Void) async {
         do {
-            let framer = NFKFramer()
+            let framer = NMFramer()
+            if let address = channel.channel.remoteAddress {
+                print("[Info]: IP: \(address.ipAddress ?? "0.0.0.0"), Port: \(address.port ?? -1)")
+            }
             try await channel.executeThenClose { inbound, outbound in
                 for try await buffer in inbound {
                     var data = buffer; guard let bytes = data.readDispatchData(length: data.readableBytes) else { return }
@@ -86,7 +91,9 @@ private extension NFKBootstrap {
                 }
             }
         } catch {
-            print("Connection error: \(error)")
+            if let error = error as? IOError, error.errnoCode != ECONNRESET {
+                print("[Error]: \(error)")
+            }
         }
     }
 }

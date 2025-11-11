@@ -1,5 +1,5 @@
 //
-//  NFKFramer.swift
+//  NMFramer.swift
 //  NIOMeasure
 //
 //  Created by Vinzenz Weist on 13.04.25.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-internal actor NFKFramer: Sendable {
+internal actor NMFramer: Sendable {
     private var buffer: DispatchData
     
     /// Create instance of `FKFramer`
@@ -26,11 +26,11 @@ internal actor NFKFramer: Sendable {
     ///
     /// - Parameter message: generic type which conforms to `Data` and `String`
     /// - Returns: generic Result type returning data and possible error
-    internal static func create<T: NFKMessage>(message: T) async throws -> Data {
-        guard message.raw.count <= NFKConstants.frame.rawValue - NFKConstants.control.rawValue else { throw NFKError.writeBufferOverflow }
+    internal static func create<T: NMMessage>(message: T) async throws -> Data {
+        guard message.raw.count <= NMConstants.frame.rawValue - NMConstants.control.rawValue else { throw NMError.writeBufferOverflow }
         var frame = Data()
         frame.append(message.opcode)
-        frame.append(UInt32(message.raw.count + NFKConstants.control.rawValue).bigEndianData)
+        frame.append(UInt32(message.raw.count + NMConstants.control.rawValue).bigEndianData)
         frame.append(message.raw)
         return frame
     }
@@ -40,17 +40,17 @@ internal actor NFKFramer: Sendable {
     /// - Parameters:
     ///   - data: the data which should be parsed
     ///   - completion: completion block returns generic Result type with parsed message and possible error
-    internal func parse(data: DispatchData) async throws -> [NFKMessage] {
-        var messages: [NFKMessage] = []; buffer.append(data); var length = buffer.length; if length <= .zero { return .init() }
-        guard buffer.count <= NFKConstants.frame.rawValue else { throw NFKError.readBufferOverflow }
-        guard buffer.count >= NFKConstants.control.rawValue, buffer.count >= length else { return .init() }
+    internal func parse(data: DispatchData) async throws -> [NMMessage] {
+        var messages: [NMMessage] = []; buffer.append(data); var length = buffer.length; if length <= .zero { return .init() }
+        guard buffer.count <= NMConstants.frame.rawValue else { throw NMError.readBufferOverflow }
+        guard buffer.count >= NMConstants.control.rawValue, buffer.count >= length else { return .init() }
         while buffer.count >= length && length != .zero {
-            guard let bytes = buffer.payload() else { throw NFKError.parsingFailed }
+            guard let bytes = buffer.payload() else { throw NMError.parsingFailed }
             switch buffer.first {
-            case NFKOpcodes.binary.rawValue: messages.append(bytes)
-            case NFKOpcodes.ping.rawValue: messages.append(UInt16(bytes.count))
-            case NFKOpcodes.text.rawValue: if let message = String(bytes: bytes, encoding: .utf8) { messages.append(message) }
-            default: throw NFKError.unexpectedOpcode }
+            case NMOpcodes.binary.rawValue: messages.append(bytes)
+            case NMOpcodes.ping.rawValue: messages.append(UInt16(bytes.count))
+            case NMOpcodes.text.rawValue: if let message = String(bytes: bytes, encoding: .utf8) { messages.append(message) }
+            default: throw NMError.unexpectedOpcode }
             if buffer.count >= length { buffer = buffer.subdata(in: .init(length)..<buffer.count) }; length = buffer.length
         }
         return messages

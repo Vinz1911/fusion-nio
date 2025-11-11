@@ -1,5 +1,5 @@
 //
-//  NFKError.swift
+//  NMError.swift
 //  NIOMeasure
 //
 //  Created by Vinzenz Weist on 17.04.25.
@@ -7,9 +7,9 @@
 
 import Foundation
 
-/// The `NFKBootstrap` specific errors
+/// The `NMBootstrap` specific errors
 @frozen
-public enum NFKError: Error, Sendable {
+public enum NMError: Error, Sendable {
     case missingHost
     case missingPort
     case connectionTimeout
