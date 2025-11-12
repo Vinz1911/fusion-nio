@@ -90,6 +90,8 @@ private extension NMBootstrap {
                     for message in try await framer.parse(data: bytes) { await completion(message, outbound) }
                 }
             }
+            channel.channel.flush()
+            await framer.reset()
         } catch {
             if let error = error as? IOError, error.errnoCode != ECONNRESET {
                 print("[Error]: \(error)")

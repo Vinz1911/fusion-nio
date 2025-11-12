@@ -22,6 +22,14 @@ internal actor NMFramer: Sendable {
         self.buffer = .empty
     }
     
+    /// Clear the message buffer
+    ///
+    /// Current message buffer will be cleared to
+    /// prevent potential buffer overflow
+    internal func reset() async -> Void {
+        self.buffer = .empty
+    }
+    
     /// Create a protocol conform message frame
     ///
     /// - Parameter message: generic type which conforms to `Data` and `String`
