@@ -75,7 +75,7 @@ internal struct NMBootstrap: Sendable {
     internal func send(_ message: NMMessage, _ outbound: NIOAsyncChannelOutboundWriter<ByteBuffer>) async {
         do {
             let frame = try await NMFramer.create(message: message)
-            try await outbound.write(.init(bytes: frame))
+            try await outbound.write(frame)
         } catch {
             Logger.shared.error("\(error)")
         }
@@ -96,8 +96,8 @@ private extension NMBootstrap {
             defer { Task { await framer.reset() } }
             try await channel.executeThenClose { inbound, outbound in
                 for try await buffer in inbound {
-                    var data = buffer; guard let bytes = data.readDispatchData(length: data.readableBytes) else { return }
-                    for message in try await framer.parse(data: bytes) { await completion(message, outbound) }
+                    var mutable = buffer
+                    for message in try await framer.parse(data: &mutable) { await completion(message, outbound) }
                 }
             }
             channel.channel.flush()

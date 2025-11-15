@@ -28,19 +28,6 @@ internal extension String {
     """#
 }
 
-internal extension UInt32 {
-    /// Convert integer to data with bigEndian
-    var bigEndianData: Data { withUnsafeBytes(of: self.bigEndian) { Data($0) } }
-}
-
-internal extension Data {
-    /// Extract integers from data as big endian
-    var bigEndian: UInt32 {
-        guard !self.isEmpty else { return .zero }
-        return UInt32(bigEndian: withUnsafeBytes { $0.load(as: UInt32.self) })
-    }
-}
-
 internal extension Logger {
     /// Singleton to access logger
     static let shared = Logger(label: .init())
@@ -52,26 +39,4 @@ internal extension Int {
     
     /// The maximum buffer size
     static var maximum: Self { 0x400000 }
-}
-
-internal extension DispatchData {
-    /// Extract the message frame size from the data,
-    /// if not possible it returns nil
-    ///
-    /// - Returns: the size as `UInt32`
-    var length: UInt32 {
-        guard self.count >= NMConstants.control.rawValue else { return .zero }
-        let size = self.subdata(in: NMConstants.opcode.rawValue..<NMConstants.control.rawValue)
-        return Data(size).bigEndian
-    }
-    
-    /// Extract the message and remove the overhead,
-    /// if not possible it returns nil
-    ///
-    /// - Returns: the extracted message as `Data`
-    func payload() -> Data? {
-        guard self.count >= NMConstants.control.rawValue else { return nil }
-        guard self.length > NMConstants.control.rawValue else { return Data() }
-        return Data(self.subdata(in: NMConstants.control.rawValue..<Int(self.length)))
-    }
 }

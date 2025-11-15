@@ -54,8 +54,8 @@ internal struct NMServer: Sendable {
     ///   - message: the received `NMMessage`
     ///   - outbound: the outbound channel writer `NIOAsyncChannelOutboundWriter`
     private static func handleMessage(server: NMBootstrap, message: NMMessage, outbound: NIOAsyncChannelOutboundWriter<ByteBuffer>) async -> Void {
-        if let message = message as? String { await server.send(Data(count: min(max(Int(message) ?? .zero, Int.minimum), Int.maximum)), outbound) }
-        if let message = message as? Data { await server.send("\(message.count)", outbound) }
+        if let message = message as? String { await server.send(ByteBuffer(bytes: Array<UInt8>(repeating: .zero, count: min(max(Int(message) ?? .zero, Int.minimum), Int.maximum))), outbound) }
+        if let message = message as? ByteBuffer { await server.send("\(message.readableBytes)", outbound) }
         if let message = message as? UInt16 { await server.send(message, outbound) }
     }
 }

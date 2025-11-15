@@ -6,9 +6,10 @@
 //
 
 import Foundation
+import NIOCore
 
 internal actor NMFramer: Sendable {
-    private var buffer: DispatchData
+    private var buffer: ByteBuffer = .init()
     
     /// Create instance of `FKFramer`
     ///
@@ -19,7 +20,7 @@ internal actor NMFramer: Sendable {
     ///
     /// This protocol is based on a standardized Type-Length-Value Design Scheme.
     internal init() {
-        self.buffer = .empty
+        self.buffer.clear()
     }
     
     /// Clear the message buffer
@@ -27,19 +28,21 @@ internal actor NMFramer: Sendable {
     /// Current message buffer will be cleared to
     /// prevent potential buffer overflow
     internal func reset() async -> Void {
-        self.buffer = .empty
+        self.buffer.clear()
     }
     
     /// Create a protocol conform message frame
     ///
     /// - Parameter message: generic type which conforms to `Data` and `String`
     /// - Returns: generic Result type returning data and possible error
-    internal static func create<T: NMMessage>(message: T) async throws -> Data {
-        guard message.raw.count <= NMConstants.frame.rawValue - NMConstants.control.rawValue else { throw NMError.writeBufferOverflow }
-        var frame = Data()
-        frame.append(message.opcode)
-        frame.append(UInt32(message.raw.count + NMConstants.control.rawValue).bigEndianData)
-        frame.append(message.raw)
+    internal static func create<T: NMMessage>(message: T) async throws -> ByteBuffer {
+        let total = message.raw.readableBytes + NMConstants.control.rawValue
+        guard total <= NMConstants.frame.rawValue else { throw NMError.writeBufferOverflow }
+        
+        var frame = ByteBuffer(); var raw = message.raw
+        frame.writeInteger(message.opcode)
+        frame.writeInteger(UInt32(total), endianness: .big, as: UInt32.self)
+        frame.writeBuffer(&raw)
         return frame
     }
     
@@ -48,18 +51,22 @@ internal actor NMFramer: Sendable {
     /// - Parameters:
     ///   - data: the data which should be parsed
     ///   - completion: completion block returns generic Result type with parsed message and possible error
-    internal func parse(data: DispatchData) async throws -> [NMMessage] {
-        var messages: [NMMessage] = []; buffer.append(data); var length = buffer.length; if length <= .zero { return .init() }
-        guard buffer.count <= NMConstants.frame.rawValue else { throw NMError.readBufferOverflow }
-        guard buffer.count >= NMConstants.control.rawValue, buffer.count >= length else { return .init() }
-        while buffer.count >= length && length != .zero {
-            guard let bytes = buffer.payload() else { throw NMError.parsingFailed }
-            switch buffer.first {
-            case NMOpcodes.binary.rawValue: messages.append(bytes)
-            case NMOpcodes.ping.rawValue: messages.append(UInt16(bytes.count))
-            case NMOpcodes.text.rawValue: if let message = String(bytes: bytes, encoding: .utf8) { messages.append(message) }
+    internal func parse(data: inout ByteBuffer) async throws -> [NMMessage] {
+        var messages: [NMMessage] = []; buffer.writeBuffer(&data); let index = NMConstants.control.rawValue
+        guard var length = buffer.getInteger(at: 1, endianness: .big, as: UInt32.self) else { return .init() }
+        guard buffer.readableBytes <= NMConstants.frame.rawValue else { throw NMError.readBufferOverflow }
+        guard buffer.readableBytes >= NMConstants.control.rawValue, buffer.readableBytes >= length else { return .init() }
+        while buffer.readableBytes >= length && length != .zero {
+            guard let opcode = buffer.getInteger(at: buffer.readerIndex, as: UInt8.self) else { throw NMError.parsingFailed }
+            
+            switch opcode {
+            case NMOpcodes.binary.rawValue: if let message = buffer.getBytes(at: index, length: Int(length) - index) { messages.append(ByteBuffer(bytes: message)) }
+            case NMOpcodes.ping.rawValue: if let message = buffer.getBytes(at: index, length: Int(length) - index) { messages.append(UInt16(message.count)) }
+            case NMOpcodes.text.rawValue: if let message = buffer.getString(at: index, length: Int(length) - index) { messages.append(message) }
             default: throw NMError.unexpectedOpcode }
-            if buffer.count >= length { buffer = buffer.subdata(in: .init(length)..<buffer.count) }; length = buffer.length
+            
+            if buffer.readableBytes <= Int(length) { buffer.clear() } else { buffer.moveReaderIndex(forwardBy: Int(length)); buffer.discardReadBytes() }
+            length = buffer.getInteger(at: buffer.readerIndex + 1, endianness: .big, as: UInt32.self) ?? .zero
         }
         return messages
     }
