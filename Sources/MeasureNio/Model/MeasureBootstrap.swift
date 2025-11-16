@@ -1,22 +1,21 @@
 //
-//  NMBootstrap.swift
-//  NIOMeasure
+//  MeasureBootstrap.swift
+//  MeasureNio
 //
 //  Created by Vinzenz Weist on 13.04.25.
 //
 
 import NIOCore
 import NIOPosix
-import Foundation
 import Logging
 
-internal struct NMBootstrap: Sendable {
+internal struct MeasureBootstrap: MeasureBootstrapProtocol, Sendable {
     private let host: String
     private let port: Int
     private let group: MultiThreadedEventLoopGroup
-    private let tracker = NMTracker()
+    private let tracker = MeasureTracker()
     
-    /// Create instance of `NMBootstrap`
+    /// Create instance of `MeasureBootstrap`
     ///
     /// - Parameters:
     ///   - host: the host address as `String`
@@ -28,20 +27,19 @@ internal struct NMBootstrap: Sendable {
         self.group = group
     }
     
-    /// Starts the bootstrap and binds the server to port and address.
+    /// Starts the `MeasureBootstrap` and binds the server to port and address
     ///
-    /// - Parameter completion: contains callback with parsed data and outbound writer.
-    internal func run(_ completion: @escaping @Sendable (NMMessage, NIOAsyncChannelOutboundWriter<ByteBuffer>) async -> Void) async throws {
+    /// - Parameter completion: completion block with parsed `FusionMessage` and the outbound writer
+    internal func run(_ completion: @escaping @Sendable (FusionMessage, NIOAsyncChannelOutboundWriter<ByteBuffer>) async -> Void) async throws {
         let bootstrap = ServerBootstrap(group: self.group)
-            .serverChannelOption(.socketOption(.so_reuseaddr), value: 1)
-            .serverChannelOption(.backlog, value: 256)
-            .childChannelOption(.socketOption(.tcp_nodelay), value: 1)
-            .childChannelOption(.maxMessagesPerRead, value: 16)
-            .childChannelOption(.recvAllocator, value: AdaptiveRecvByteBufferAllocator())
+            .serverChannelOption(.socketOption(.so_reuseaddr), value: .one)
+            .serverChannelOption(.backlog, value: .backlogMax)
+            .childChannelOption(.socketOption(.tcp_nodelay), value: .one)
+            .childChannelOption(.maxMessagesPerRead, value: .messageMax)
         
         let channel = try await bootstrap.bind(host: self.host, port: self.port) { channel in
             channel.eventLoop.makeCompletedFuture {
-                let timer = channel.eventLoop.scheduleTask(in: .seconds(60)) { channel.close(promise: nil) }
+                let timer = channel.eventLoop.scheduleTask(in: .seconds(.timeout)) { channel.close(promise: nil) }
                 channel.closeFuture.whenComplete { _ in timer.cancel() }
                 return try NIOAsyncChannel(
                     wrappingChannelSynchronously: channel,
@@ -67,16 +65,18 @@ internal struct NMBootstrap: Sendable {
         }
     }
     
-    /// Send data on specific connection.
+    /// Send data on specific channel
     ///
     /// - Parameters:
-    ///   - message: the `NMMessage` to send
-    ///   - outbound: the specific `NIOAsyncChannelOutboundWriter`
-    internal func send(_ message: NMMessage, _ outbound: NIOAsyncChannelOutboundWriter<ByteBuffer>) async {
+    ///   - message: the `FusionMessage` to send
+    ///   - outbound: the outbound channel `NIOAsyncChannelOutboundWriter`
+    internal func send(_ message: FusionMessage, _ outbound: NIOAsyncChannelOutboundWriter<ByteBuffer>) async {
         do {
-            let frame = try await NMFramer.create(message: message)
+            let frame = try await FusionFramer.create(message: message)
             try await outbound.write(frame)
         } catch {
+            guard let error = error as? IOError else { return }
+            guard error.errnoCode != ECONNRESET, error.errnoCode != EPIPE, error.errnoCode != EBADF else { return }
             Logger.shared.error("\(error)")
         }
     }
@@ -84,28 +84,27 @@ internal struct NMBootstrap: Sendable {
 
 // MARK: - Private API -
 
-private extension NMBootstrap {
-    /// Connection handler for each individual connection.
+private extension MeasureBootstrap {
+    /// Connection handler for each individual connection
     ///
     /// - Parameters:
     ///   - channel: the `NIOAsyncChannel`
-    ///   - completion: the parsed `NMMessage` and `NIOAsyncChannelOutboundWriter`
-    private func connection(channel: NIOAsyncChannel<ByteBuffer, ByteBuffer>, completion: @escaping @Sendable (NMMessage, NIOAsyncChannelOutboundWriter<ByteBuffer>) async -> Void) async {
+    ///   - completion: the parsed `FusionMessage` and `NIOAsyncChannelOutboundWriter`
+    private func connection(channel: NIOAsyncChannel<ByteBuffer, ByteBuffer>, completion: @escaping @Sendable (FusionMessage, NIOAsyncChannelOutboundWriter<ByteBuffer>) async -> Void) async {
         do {
-            let framer = NMFramer()
+            let framer = FusionFramer()
             defer { Task { await framer.reset() } }
             try await channel.executeThenClose { inbound, outbound in
                 for try await buffer in inbound {
-                    var mutable = buffer
-                    for message in try await framer.parse(data: &mutable) { await completion(message, outbound) }
+                    var mutable = buffer; let messages = try await framer.parse(data: &mutable)
+                    for message in messages { await completion(message, outbound) }
                 }
             }
             channel.channel.flush()
         } catch {
             guard let error = error as? IOError else { return }
-            if error.errnoCode != ECONNRESET, error.errnoCode != EPIPE, error.errnoCode != EBADF {
-                Logger.shared.error("\(error)")
-            }
+            guard error.errnoCode != ECONNRESET, error.errnoCode != EPIPE, error.errnoCode != EBADF else { return }
+            Logger.shared.error("\(error)")
         }
     }
 }

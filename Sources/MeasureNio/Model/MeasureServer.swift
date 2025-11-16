@@ -1,13 +1,12 @@
 //
-//  NMServer.swift
-//  NIOMeasure
+//  MeasureServer.swift
+//  MeasureNio
 //
 //  Created by Vinzenz Weist on 17.04.25.
 //
 
 import NIOCore
 import NIOPosix
-import Foundation
 import Logging
 
 #if os(Linux)
@@ -19,7 +18,7 @@ let M_ARENA_MAX: Int32 = -8
 
 @_silgen_name("mallopt")
 func c_mallopt(_ param: Int32, _ value: Int32) -> Int32
-func configMalloc() {
+func config_malloc() {
     _ = c_mallopt(M_ARENA_MAX, 2)
     _ = c_mallopt(M_TRIM_THRESHOLD, 131_072)
     _ = c_mallopt(M_MMAP_THRESHOLD, 131_072)
@@ -27,34 +26,44 @@ func configMalloc() {
 #endif
 
 @main
-internal struct NMServer: Sendable {
+internal struct MeasureServer: Sendable {
     /// The `main` entry point.
     ///
-    /// Start the `NMServer` and receive data.
+    /// Start the `MeasureServer` and receive data.
     /// This is used as Bandwidth measurement server, it receives data or a requested amount of data
     /// and sends the appropriated value back to the client.
     static func main() async throws {
         #if os(Linux)
-        configMalloc()
+        config_malloc()
         #endif
         
         LoggingSystem.bootstrap(StreamLogHandler.standardError)
         let group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
-        let server = NMBootstrap(host: "0.0.0.0", port: 7878, group: group)
+        let server = MeasureBootstrap(host: "127.0.0.1", port: 7878, group: group)
+        
+        await logStartup()
+        try await server.run() {
+            await handleMessage(server: server, message: $0, outbound: $1)
+        }
+    }
+    
+    /// Log startup
+    ///
+    /// Show logo and other information
+    private static func logStartup() async -> Void {
         Logger.shared.notice(.init(stringLiteral: .logo))
         Logger.shared.info(.init(stringLiteral: .version))
         Logger.shared.info("System core count: \(System.coreCount)")
-        try await server.run() { await handleMessage(server: server, message: $0, outbound: $1) }
     }
     
     /// Server connection handler
     ///
     /// - Parameters:
-    ///   - server: the server `NMBootstrap`
-    ///   - message: the received `NMMessage`
+    ///   - server: the server `MeasureBootstrap`
+    ///   - message: the received `FusionMessage`
     ///   - outbound: the outbound channel writer `NIOAsyncChannelOutboundWriter`
-    private static func handleMessage(server: NMBootstrap, message: NMMessage, outbound: NIOAsyncChannelOutboundWriter<ByteBuffer>) async -> Void {
-        if let message = message as? String { await server.send(ByteBuffer(bytes: Array<UInt8>(repeating: .zero, count: min(max(Int(message) ?? .zero, Int.minimum), Int.maximum))), outbound) }
+    private static func handleMessage(server: MeasureBootstrap, message: FusionMessage, outbound: NIOAsyncChannelOutboundWriter<ByteBuffer>) async -> Void {
+        if let message = message as? String { await server.send(ByteBuffer(bytes: Array<UInt8>(repeating: .zero, count: min(max(Int(message) ?? .zero, Int.frameMin), Int.frameMax))), outbound) }
         if let message = message as? ByteBuffer { await server.send("\(message.readableBytes)", outbound) }
         if let message = message as? UInt16 { await server.send(message, outbound) }
     }

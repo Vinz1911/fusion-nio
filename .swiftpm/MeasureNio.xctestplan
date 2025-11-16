@@ -1,7 +1,7 @@
 {
   "configurations" : [
     {
-      "id" : "6DCE5ADB-A357-4EC0-8D9C-E18666654851",
+      "id" : "0946DAD3-40A1-4588-8561-EE67DB363FE0",
       "name" : "Test Scheme Action",
       "options" : {
 
@@ -12,12 +12,18 @@
     "performanceAntipatternCheckerEnabled" : true,
     "targetForVariableExpansion" : {
       "containerPath" : "container:",
-      "identifier" : "NIOMeasure",
-      "name" : "NIOMeasure"
+      "identifier" : "MeasureNio",
+      "name" : "MeasureNio"
     }
   },
   "testTargets" : [
-
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "MeasureNioTests",
+        "name" : "MeasureNioTests"
+      }
+    }
   ],
   "version" : 1
 }

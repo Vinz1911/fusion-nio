@@ -4,7 +4,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "NIOMeasure",
+    name: "MeasureNio",
     platforms: [
         .macOS(.v26)
     ],
@@ -16,15 +16,15 @@ let package = Package(
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .executableTarget(
-            name: "NIOMeasure",
+            name: "MeasureNio",
             dependencies: [
                 .product(name: "NIO", package: "swift-nio"),
                 .product(name: "Logging", package: "swift-log")
             ]
         ),
         .testTarget(
-            name: "NIOMeasureTests",
-            dependencies: ["NIOMeasure"]
+            name: "MeasureNioTests",
+            dependencies: ["MeasureNio"]
         ),
     ]
 )

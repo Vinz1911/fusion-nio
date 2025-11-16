@@ -15,9 +15,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "NIOMeasure"
-               BuildableName = "NIOMeasure"
-               BlueprintName = "NIOMeasure"
+               BlueprintIdentifier = "MeasureNio"
+               BuildableName = "MeasureNio"
+               BlueprintName = "MeasureNio"
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
@@ -30,7 +30,7 @@
       shouldUseLaunchSchemeArgsEnv = "YES">
       <TestPlans>
          <TestPlanReference
-            reference = "container:.swiftpm/NIOMeasure.xctestplan"
+            reference = "container:.swiftpm/MeasureNio.xctestplan"
             default = "YES">
          </TestPlanReference>
       </TestPlans>
@@ -39,9 +39,9 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "NIOMeasureTests"
-               BuildableName = "NIOMeasureTests"
-               BlueprintName = "NIOMeasureTests"
+               BlueprintIdentifier = "MeasureNioTests"
+               BuildableName = "MeasureNioTests"
+               BlueprintName = "MeasureNioTests"
                ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>
@@ -61,9 +61,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "NIOMeasure"
-            BuildableName = "NIOMeasure"
-            BlueprintName = "NIOMeasure"
+            BlueprintIdentifier = "MeasureNio"
+            BuildableName = "MeasureNio"
+            BlueprintName = "MeasureNio"
             ReferencedContainer = "container:">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -78,9 +78,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "NIOMeasure"
-            BuildableName = "NIOMeasure"
-            BlueprintName = "NIOMeasure"
+            BlueprintIdentifier = "MeasureNio"
+            BuildableName = "MeasureNio"
+            BlueprintName = "MeasureNio"
             ReferencedContainer = "container:">
          </BuildableReference>
       </BuildableProductRunnable>

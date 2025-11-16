@@ -1,15 +1,15 @@
 //
-//  NMError.swift
-//  NIOMeasure
+//  MeasureError.swift
+//  MeasureNio
 //
 //  Created by Vinzenz Weist on 17.04.25.
 //
 
-import Foundation
+// MARK: - Framer Error -
 
-/// The `NMBootstrap` specific errors
+/// The `FusionFramerError` specific errors
 @frozen
-public enum NMError: Error, Sendable {
+public enum FusionFramerError: Error, Sendable {
     case parsingFailed
     case readBufferOverflow
     case writeBufferOverflow
