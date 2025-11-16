@@ -39,7 +39,7 @@ internal struct MeasureServer: Sendable {
         
         LoggingSystem.bootstrap(StreamLogHandler.standardError)
         let group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
-        let server = MeasureBootstrap(host: "127.0.0.1", port: 7878, group: group)
+        let server = MeasureBootstrap(host: "0.0.0.0", port: 7878, group: group)
         
         await logStartup()
         try await server.run() {
