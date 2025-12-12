@@ -12,6 +12,9 @@ import Logging
 
 @main
 struct MeasureServer: Sendable {
+    static let group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
+    static let bootstrap = FusionBootstrap(host: "127.0.0.1", port: 7878, group: group)
+    
     /// The `main` entry point.
     ///
     /// Start the `MeasureServer` and receive data.
@@ -20,17 +23,14 @@ struct MeasureServer: Sendable {
     static func main() async throws {
         MallocAdapter.configure()
         LoggingSystem.bootstrap(StreamLogHandler.standardError)
-        let group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
-        let server = try FusionBootstrap(host: "127.0.0.1", port: 7878, group: group)
         
         Logger.shared.notice(.init(stringLiteral: .logo))
         Logger.shared.info(.init(stringLiteral: .version))
         Logger.shared.info("System core count: \(System.coreCount)")
         Logger.shared.info("Mode: Measure")
-
-        try await server.run() { message, outbound in
-            await handler(server: server, message: message, outbound: outbound)
-        }
+        
+        Task(priority: .userInitiated) { for await result in bootstrap.receive() { await handler(result: result) } }
+        try await bootstrap.run()
     }
 }
 
@@ -40,12 +40,13 @@ extension MeasureServer {
     /// Server channel handler
     ///
     /// - Parameters:
-    ///   - server: the server `FusionBootstrap`
     ///   - message: the received `FusionMessage`
     ///   - outbound: the outbound channel writer `NIOAsyncChannelOutboundWriter`
-    private static func handler(server: FusionBootstrap, message: FusionMessage, outbound: NIOAsyncChannelOutboundWriter<ByteBuffer>) async -> Void {
-        if let message = message as? String { await server.send(ByteBuffer(repeating: .zero, count: min(max(Int(message) ?? .zero, 0x1), 0x400000)), outbound) }
-        if let message = message as? ByteBuffer { await server.send("\(message.readableBytes)", outbound) }
-        if let message = message as? UInt16 { await server.send(message, outbound) }
+    private static func handler(result: FusionResult) async -> Void {
+        var message: FusionMessage?
+        if let received = result.message as? String { message = ByteBuffer(repeating: .zero, count: min(max(Int(received) ?? .zero, 0x1), 0x400000)) }
+        if let received = result.message as? ByteBuffer { message = "\(received.readableBytes)" }
+        if let received = result.message as? UInt16 { message = received }
+        if let message { await bootstrap.send(message, result.outbound) }
     }
 }

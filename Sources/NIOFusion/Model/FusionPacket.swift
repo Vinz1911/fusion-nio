@@ -22,4 +22,5 @@ enum FusionOpcode: UInt8, Sendable {
     case string = 0x1
     case data   = 0x2
     case uint16 = 0x3
+    var type: any FusionFrame.Type { switch self { case .string: String.self case .data: ByteBuffer.self case .uint16: UInt16.self } }
 }

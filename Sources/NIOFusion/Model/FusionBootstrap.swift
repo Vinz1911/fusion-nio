@@ -10,11 +10,12 @@ import NIOCore
 import NIOPosix
 import Logging
 
-struct FusionBootstrap: FusionBootstrapProtocol {
+struct FusionBootstrap: /*FusionBootstrapProtocol,*/ Sendable {
     private let host: String
     private let port: UInt16
     private let group: MultiThreadedEventLoopGroup
     private let tracker = FusionTracker()
+    private var (stream, continuation) = AsyncStream.makeStream(of: FusionResult.self)
     
     /// Create instance of `FusionBootstrap`
     ///
@@ -22,15 +23,14 @@ struct FusionBootstrap: FusionBootstrapProtocol {
     ///   - host: the host address as `String`
     ///   - port: the port number as `UInt16`
     ///   - group: the event group as `MultiThreadedEventLoopGroup`
-    init(host: String, port: UInt16, group: MultiThreadedEventLoopGroup) throws {
-        if host.isEmpty { throw(FusionBootstrapError.invalidHostName) }; if port == .zero { throw(FusionBootstrapError.invalidPortNumber) }
+    init(host: String, port: UInt16, group: MultiThreadedEventLoopGroup) {
         self.host = host; self.port = port; self.group = group
     }
     
     /// Starts the `FusionBootstrap` and binds the server to port and address
     ///
     /// - Parameter completion: completion block with parsed `FusionMessage` and the outbound writer
-    func run(_ completion: @escaping @Sendable (FusionMessage, NIOAsyncChannelOutboundWriter<ByteBuffer>) async -> Void) async throws {
+    func run() async throws {
         let bootstrap = ServerBootstrap(group: self.group)
             .serverChannelOption(.socketOption(.so_reuseaddr), value: 1)
             .serverChannelOption(.backlog, value: .backlogMax)
@@ -57,9 +57,7 @@ struct FusionBootstrap: FusionBootstrapProtocol {
                             Logger.shared.info("IP: \(address.ipAddress ?? "0.0.0.0"), Port: \(address.port ?? -1)")
                         }
                     }
-                    group.addTask {
-                        await addChannel(channel: channel) { await completion($0, $1) }
-                    }
+                    group.addTask { await addChannel(channel: channel) }
                 }
             }
         }
@@ -77,6 +75,13 @@ struct FusionBootstrap: FusionBootstrapProtocol {
             try await outbound.write(frame)
         } catch { log(from: error) }
     }
+    
+    /// Receive a continues stream of `FusionResult`s
+    ///
+    /// The stream contains the `FusionResult` and the outbound writer
+    func receive() -> AsyncStream<FusionResult> {
+        return stream
+    }
 }
 
 // MARK: - Private API Extension -
@@ -87,14 +92,14 @@ private extension FusionBootstrap {
     /// - Parameters:
     ///   - channel: the `NIOAsyncChannel`
     ///   - completion: the parsed `FusionMessage` and `NIOAsyncChannelOutboundWriter`
-    private func addChannel(channel: NIOAsyncChannel<ByteBuffer, ByteBuffer>, completion: @escaping @Sendable (FusionMessage, NIOAsyncChannelOutboundWriter<ByteBuffer>) async -> Void) async {
+    private func addChannel(channel: NIOAsyncChannel<ByteBuffer, ByteBuffer>) async -> Void {
         let framer = FusionFramer()
         defer { Task { await framer.clear() } }
         do {
             try await channel.executeThenClose { inbound, outbound in
                 for try await buffer in inbound {
                     let messages = try await framer.parse(data: buffer)
-                    for message in messages { await completion(message, outbound) }
+                    for message in messages { continuation.yield(.init(message: message, outbound: outbound)) }
                 }
             }
         } catch { log(from: error) }

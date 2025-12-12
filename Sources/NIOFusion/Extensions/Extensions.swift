@@ -55,6 +55,13 @@ extension UInt {
     static var messageMax: Self { 16 }
 }
 
+extension UInt32 {
+    /// The fusion frame payload length
+    var payload: Int {
+        Int(self) - FusionPacket.header.rawValue
+    }
+}
+
 // MARK: - ByteBuffer -
 
 extension ByteBuffer {
@@ -72,8 +79,7 @@ extension ByteBuffer {
     ///   - length: the length of the payload
     /// - Returns: the `FusionMessage`
     func decode(with opcode: UInt8, from length: UInt32) -> FusionFrame? {
-        guard let payload = self.getSlice(at: FusionPacket.header.rawValue, length: Int(length) - FusionPacket.header.rawValue) else { return nil }
-        guard let opcode = FusionOpcode(rawValue: opcode) else { return nil }
-        return switch opcode { case .string: String.decode(from: payload) case .data: ByteBuffer.decode(from: payload) case .uint16: UInt16.decode(from: payload) }
+        guard let payload = self.getSlice(at: FusionPacket.header.rawValue, length: length.payload) else { return nil }
+        return FusionOpcode(rawValue: opcode)?.type.decode(from: payload)
     }
 }

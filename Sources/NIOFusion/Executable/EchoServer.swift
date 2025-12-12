@@ -9,7 +9,7 @@
 import NIOCore
 import NIOPosix
 import Logging
-
+/*
 // @main << TODO: Enable -
 struct EchoServer: Sendable {
     /// The `main` entry point.
@@ -25,7 +25,8 @@ struct EchoServer: Sendable {
         Logger.shared.info("System core count: \(System.coreCount)")
         Logger.shared.info("Mode: Echo")
         
-        try await server.run() { await server.send($0, $1) }
+        try await server.run() { await server.send(from: $0) }
     }
 }
 
+*/
