@@ -14,7 +14,7 @@ import NIOPosix
 
 extension String {
     /// Version number
-    static let version = "v1.4.0"
+    static let version = "v1.2.0"
     
     /// Prompt logo
     static let logo = #"""

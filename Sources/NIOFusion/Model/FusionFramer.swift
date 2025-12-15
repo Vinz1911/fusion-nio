@@ -22,8 +22,9 @@ actor FusionFramer: FusionFramerProtocol {
     /// - Returns: the message frame as `ByteBuffer`
     static nonisolated func create<T: FusionFrame>(message: T) throws(FusionFramerError) -> ByteBuffer {
         guard message.size <= FusionStatic.total.rawValue else { throw .outputBufferOverflow }
-        var frame = ByteBuffer(); frame.writeInteger(message.opcode); frame.writeInteger(UInt32(message.size), endianness: .big, as: UInt32.self); frame.writeImmutableBuffer(message.encode)
-        return frame
+        var frame = ByteBuffer(); frame.writeInteger(message.opcode)
+        frame.writeInteger(UInt32(message.size), endianness: .big, as: UInt32.self)
+        frame.writeImmutableBuffer(message.encode); return frame
     }
     
     /// Parse a `FusionMessage` conform frame

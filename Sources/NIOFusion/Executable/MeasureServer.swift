@@ -12,7 +12,7 @@ import Logging
 
 @main
 struct MeasureServer: Sendable {
-    static let endpoint: FusionEndpoint = .localhost
+    static let endpoint: FusionEndpoint = .production
     static let group = MultiThreadedEventLoopGroup(numberOfThreads: System.coreCount)
     static let bootstrap = FusionBootstrap(from: endpoint, group: group)
     
@@ -30,7 +30,7 @@ struct MeasureServer: Sendable {
         Logger.shared.info("Measure Server")
         Logger.shared.info("Listening on \(self.endpoint.host):\(self.endpoint.port)")
         
-        MallocAdapter.configure()
+        _Malloc.configure()
         Task { for await result in bootstrap.receive() { Task { await handler(result: result) } } }
         try await bootstrap.run()
     }
