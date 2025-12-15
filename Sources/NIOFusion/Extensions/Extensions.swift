@@ -13,9 +13,6 @@ import NIOPosix
 // MARK: - String -
 
 extension String {
-    /// Version number
-    static let version = "v1.2.0"
-    
     /// Prompt logo
     static let logo = #"""
     
@@ -41,7 +38,7 @@ extension Logger {
     /// Log channel `IOError`
     ///
     /// - Parameter error: the `Error`
-    func outin(from error: Error) -> Void {
+    func ioerror(from error: Error) -> Void {
         guard let error = error as? IOError else { return }
         guard error.errnoCode != ECONNRESET, error.errnoCode != EPIPE, error.errnoCode != EBADF else { return }
         Logger.shared.error("\(error)")
@@ -59,21 +56,6 @@ extension FusionEndpoint {
 }
 
 // MARK: - Int -
-
-extension Int32 {
-    /// The maximum backlog
-    static var backlogMax: Self { 256 }
-}
-
-extension Int64 {
-    /// The channel timeout
-    static var timeout: Self { 90 }
-}
-
-extension UInt {
-    /// The maximum messages
-    static var messageMax: Self { 16 }
-}
 
 extension UInt32 {
     /// The fusion frame payload length

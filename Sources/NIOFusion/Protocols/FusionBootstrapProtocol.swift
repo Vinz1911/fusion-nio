@@ -9,13 +9,14 @@
 import NIOCore
 import NIOPosix
 
-protocol FusionBootstrapProtocol: Sendable {
+public protocol FusionBootstrapProtocol: Sendable {
     /// Create instance of `FusionBootstrap`
     ///
     /// - Parameters:
     ///   - endpoint: the `FusionEndpoint` to bind to
-    ///   - group: the event group as `MultiThreadedEventLoopGroup`
-    init(from endpoint: FusionEndpoint, group: MultiThreadedEventLoopGroup)
+    ///   - threads: the thread count for the `MultiThreadedEventLoopGroup`
+    ///   - parameters: the configurable `FusionParameters`
+    init(from endpoint: FusionEndpoint, threads: Int, parameters: FusionParameters)
 
     /// Starts the `FusionBootstrap` and binds the server to port and address
     ///
@@ -26,10 +27,16 @@ protocol FusionBootstrapProtocol: Sendable {
     ///
     /// An continues `AsyncStream` returns `FusionResult`
     func receive() -> AsyncStream<FusionResult>
+    
     /// Send data on specific channel
     ///
     /// - Parameters:
     ///   - message: the `FusionMessage` to send
     ///   - outbound: the outbound channel `NIOAsyncChannelOutboundWriter`
     func send(_ message: FusionMessage, _ outbound: NIOAsyncChannelOutboundWriter<ByteBuffer>) async -> Void
+    
+    /// Show info
+    ///
+    /// Print logo and usefull information
+    func info() -> Void
 }

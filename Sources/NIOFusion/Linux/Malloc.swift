@@ -29,7 +29,7 @@ struct _Malloc {
         mallopt(M_MMAP_THRESHOLD, 131_072)
         Logger.shared.error("Malloc configurated")
         #else
-        Logger.shared.error("Malloc configuration is not supported")
+        Logger.shared.warning("Malloc configuration is not supported")
         #endif
     }
 }

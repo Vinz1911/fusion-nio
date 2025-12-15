@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import NIOCore
 
 protocol FusionTrackerProtocol: Sendable {
     /// Create instance of `FusionTracker`
@@ -14,9 +15,8 @@ protocol FusionTrackerProtocol: Sendable {
     /// - Parameter expiration: reset interval
     init(expiration: TimeInterval)
     
-    /// Address to log
+    /// Track incoming IP Addresses
     ///
-    /// - Parameter address: the ip address
-    /// - Returns: true if it should log again
-    func log(_ address: String) async -> Bool
+    /// - Parameter channel: from `any Channel`
+    func fetch(from channel: any Channel) async -> Void
 }

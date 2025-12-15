@@ -10,28 +10,20 @@ import NIOCore
 
 // MARK: - Fusion Result Protocol -
 
-protocol FusionResultProtocol: Sendable {
+public protocol FusionResultProtocol: Sendable {
+    /// The `FusionMessage`
     var message: FusionMessage { get }
-    var outbound: NIOAsyncChannelOutboundWriter<ByteBuffer> { get }
     
-    /// The `FusionResult`
-    ///
-    /// - Parameters:
-    ///   - message: the `FusionMessage`
-    ///   - outbound: the `NIOAsyncChannelOutboundWriter`
-    init(message: FusionMessage, outbound: NIOAsyncChannelOutboundWriter<ByteBuffer>)
+    /// The current `NIOAsyncChannelOutboundWriter` from the connection
+    var outbound: NIOAsyncChannelOutboundWriter<ByteBuffer> { get }
 }
 
 // MARK: - Fusion Endpoint Protocol -
 
-protocol FusionEndpointProtocol: Sendable {
+public protocol FusionEndpointProtocol: Sendable {
+    /// The host name
     var host: String { get }
-    var port: UInt16 { get }
     
-    /// Create an Endpoint
-    ///
-    /// - Parameters:
-    ///   - host: the host as `String`
-    ///   - port: the port as `UInt16`
-    init(host: String, port: UInt16)
+    /// The port address
+    var port: UInt16 { get }
 }
