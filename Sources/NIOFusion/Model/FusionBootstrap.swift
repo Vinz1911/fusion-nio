@@ -38,7 +38,7 @@ public struct FusionBootstrap: FusionBootstrapProtocol, Sendable {
         let bootstrap = ServerBootstrap(group: group)
             .serverChannelOption(.socketOption(.so_reuseaddr), value: 1)
             .serverChannelOption(.backlog, value: Int32(parameters.backlog))
-            .childChannelOption(.socketOption(.tcp_nodelay), value: parameters.nodelay ? Int32(1) : Int32(0))
+            .childChannelOption(.socketOption(.tcp_nodelay), value: ChannelOptions.Types.SocketOption.Value(parameters.nodelay ? 1 : 0))
             .childChannelOption(.maxMessagesPerRead, value: UInt(parameters.messages))
         
         let channel = try await binding(from: bootstrap)
