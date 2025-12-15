@@ -9,6 +9,8 @@
 import Foundation
 import NIOCore
 
+// MARK: - Fusion Tracker -
+
 protocol FusionTrackerProtocol: Sendable {
     /// Create instance of `FusionTracker`
     ///

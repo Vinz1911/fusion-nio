@@ -10,8 +10,8 @@ struct NIOFusionTests {
         let framer = FusionFramer()
         let malformed = ByteBuffer(bytes: [1, 0, 0, 0, 1, 0, 0, 0, 10, 80, 97, 115, 115, 33])
         let invalid = ByteBuffer(bytes: [0x1, 0x0, 0x0, 0x0, 0x6, 0xFF])
-        await #expect(throws: FusionFramerError.decodeMessageFailed) { await framer.clear(); let _ = try await framer.parse(data: invalid) }
-        await #expect(throws: FusionFramerError.decodeMessageFailed) { await framer.clear(); let _ = try await framer.parse(data: malformed) }
+        await #expect(throws: FusionFramerError.decode) { await framer.clear(); let _ = try await framer.parse(data: invalid) }
+        await #expect(throws: FusionFramerError.decode) { await framer.clear(); let _ = try await framer.parse(data: malformed) }
     }
     
     /// Create + parse with `FusionFramer`
