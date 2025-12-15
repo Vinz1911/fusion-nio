@@ -6,6 +6,8 @@
 //  Copyright © 2025 Vinzenz Weist. All rights reserved.
 //
 
+import NIOCore
+
 public struct FusionParameters: FusionParametersProtocol, Sendable {
     public let timeout: UInt16?
     public let backlog: UInt16

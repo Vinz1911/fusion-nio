@@ -6,6 +6,8 @@
 //  Copyright © 2025 Vinzenz Weist. All rights reserved.
 //
 
+import NIOCore
+
 // MARK: - Fusion Framer Error -
 
 /// The `FusionFramerError` specific errors
