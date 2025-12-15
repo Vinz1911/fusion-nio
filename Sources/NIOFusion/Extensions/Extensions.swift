@@ -45,16 +45,6 @@ extension Logger {
     }
 }
 
-// MARK: - Endpoint -
-
-extension FusionEndpoint {
-    /// The localhost endpoint
-    static var localhost: Self { .init(host: "127.0.0.1", port: 7878) }
-    
-    /// The production endpoint
-    static var production: Self { .init(host: "0.0.0.0", port: 7878) }
-}
-
 // MARK: - Int -
 
 extension UInt32 {
