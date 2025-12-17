@@ -27,16 +27,4 @@ public protocol FusionBootstrapProtocol: Sendable {
     ///
     /// An continues `AsyncStream` returns `FusionResult`
     func receive() -> AsyncStream<FusionResult>
-    
-    /// Send data on specific channel
-    ///
-    /// - Parameters:
-    ///   - message: the `FusionMessage` to send
-    ///   - outbound: the outbound channel `NIOAsyncChannelOutboundWriter`
-    func send(_ message: FusionMessage, _ outbound: NIOAsyncChannelOutboundWriter<ByteBuffer>) async -> Void
-    
-    /// Show info
-    ///
-    /// Print logo and usefull information
-    func info() -> Void
 }

@@ -39,15 +39,17 @@ protocol FusionFramerProtocol: Sendable {
     
     /// Create a `FusionMessage` conform frame
     ///
-    /// - Parameter message: generic type which conforms to `FusionMessage`
+    /// - Parameters:
+    ///   - message: generic type which conforms to `FusionMessage`
+    ///   - ceiling: the inbound buffer size limit from `FusionCeiling`
     /// - Returns: the message frame as `ByteBuffer`
-    static nonisolated func create<T: FusionFrame>(message: T) throws(FusionFramerError) -> ByteBuffer
+    static nonisolated func create<T: FusionFrame>(message: T, ceiling: FusionCeiling) throws(FusionFramerError) -> ByteBuffer
     
     /// Parse a `FusionMessage` conform frame
     ///
     /// - Parameters:
     ///   - slice: pointer to the `ByteBuffer` which holds the `FusionMessage`
-    ///   - size: the inbound buffer size limit from `FusionSize`
+    ///   - ceiling: the inbound buffer size limit from `FusionCeiling`
     /// - Returns: a collection of `FusionMessage`s
-    func parse(slice: ByteBuffer, size: FusionSize) async throws(FusionFramerError) -> [FusionFrame]
+    func parse(slice: ByteBuffer, ceiling: FusionCeiling) async throws(FusionFramerError) -> [FusionFrame]
 }

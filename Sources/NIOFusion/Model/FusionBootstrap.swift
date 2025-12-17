@@ -9,6 +9,7 @@
 import NIOCore
 import NIOPosix
 import Logging
+import Foundation
 
 public struct FusionBootstrap: FusionBootstrapProtocol, Sendable {
     private let endpoint: FusionEndpoint
@@ -45,33 +46,11 @@ public struct FusionBootstrap: FusionBootstrapProtocol, Sendable {
         try await listening(from: channel)
     }
     
-    /// Send data on specific channel
-    ///
-    /// - Parameters:
-    ///   - message: the `FusionMessage` to send
-    ///   - outbound: the outbound channel `NIOAsyncChannelOutboundWriter`
-    public func send(_ message: FusionMessage, _ outbound: NIOAsyncChannelOutboundWriter<ByteBuffer>) async -> Void {
-        do {
-            guard let message = message as? FusionFrame else { return }
-            let frame = try FusionFramer.create(message: message)
-            try await outbound.write(frame)
-        } catch { Logger.shared.ioerror(from: error) }
-    }
-    
     /// Receive `FusionResult` from stream
     ///
     /// An continues `AsyncStream` returns `FusionResult`
     public func receive() -> AsyncStream<FusionResult> {
         return stream
-    }
-    
-    /// Show info
-    ///
-    /// Print logo and usefull information
-    public func info() -> Void {
-        Logger.shared.notice(.init(stringLiteral: .logo))
-        Logger.shared.info("Number of Threads: \(threads)")
-        Logger.shared.info("Listening on \(endpoint.host):\(endpoint.port)")
     }
 }
 
@@ -101,8 +80,8 @@ private extension FusionBootstrap {
         try await withThrowingDiscardingTaskGroup { group in
             try await channel.executeThenClose { inbound in
                 for try await channel in inbound {
-                    if parameters.logging { await tracker.fetch(from: channel.channel) }
-                    group.addTask { do { try await append(channel: channel) } catch { Logger.shared.ioerror(from: error) } }
+                    if parameters.tracking { await tracker.fetch(from: channel.channel) }
+                    group.addTask { do { try await append(channel: channel) } catch { Logger.shared.error("\(error)") } }
                 }
             }
         }
@@ -114,12 +93,12 @@ private extension FusionBootstrap {
     ///   - channel: the `NIOAsyncChannel`
     ///   - completion: the parsed `FusionMessage` and `NIOAsyncChannelOutboundWriter`
     private func append(channel: NIOAsyncChannel<ByteBuffer, ByteBuffer>) async throws -> Void {
-        let framer = FusionFramer()
+        let framer = FusionFramer(); let id = UUID()
         try await channel.executeThenClose { inbound, outbound in
             for try await buffer in inbound {
                 guard channel.channel.isActive else { break }
-                let messages = try await framer.parse(slice: buffer, size: parameters.size)
-                for message in messages { continuation.yield(.init(message: message, outbound: outbound)) }
+                let messages = try await framer.parse(slice: buffer, ceiling: parameters.ceiling)
+                for message in messages { continuation.yield(.init(id: id, message: message, outbound: outbound, ceiling: parameters.ceiling)) }
             }
         }
         await framer.clear()

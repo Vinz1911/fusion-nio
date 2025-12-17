@@ -18,24 +18,25 @@ actor FusionFramer: FusionFramerProtocol {
     
     /// Create a `FusionMessage` conform frame
     ///
-    /// - Parameter message: generic type which conforms to `FusionMessage`
+    /// - Parameters:
+    ///   - message: generic type which conforms to `FusionMessage`
+    ///   - ceiling: the inbound buffer size limit from `FusionCeiling`
     /// - Returns: the message frame as `ByteBuffer`
-    static nonisolated func create<T: FusionFrame>(message: T) throws(FusionFramerError) -> ByteBuffer {
-        guard message.size <= FusionStatic.total.rawValue else { throw .outbound }
-        var frame = ByteBuffer(); frame.writeInteger(message.opcode)
-        frame.writeInteger(UInt32(message.size), endianness: .big, as: UInt32.self)
-        frame.writeImmutableBuffer(message.encode); return frame
+    static nonisolated func create<T: FusionFrame>(message: T, ceiling: FusionCeiling = .unlimited) throws(FusionFramerError) -> ByteBuffer {
+        guard message.size <= FusionStatic.total.rawValue, message.size <= ceiling.rawValue else { throw .outbound }
+        var frame = ByteBuffer(); frame.writeInteger(message.opcode); frame.writeInteger(UInt32(message.size), endianness: .big, as: UInt32.self); frame.writeImmutableBuffer(message.encode)
+        return frame
     }
     
     /// Parse a `FusionMessage` conform frame
     ///
     /// - Parameters:
     ///   - slice: pointer to the `ByteBuffer` which holds the `FusionMessage`
-    ///   - size: the inbound buffer size limit from `FusionSize`
+    ///   - ceiling: the inbound buffer size limit from `FusionCeiling`
     /// - Returns: a collection of `FusionMessage`s
-    func parse(slice: ByteBuffer, size: FusionSize = .high) async throws(FusionFramerError) -> [FusionFrame] {
+    func parse(slice: ByteBuffer, ceiling: FusionCeiling = .unlimited) async throws(FusionFramerError) -> [FusionFrame] {
         var messages: [FusionFrame] = []; buffer.writeImmutableBuffer(slice)
-        guard buffer.readableBytes <= FusionStatic.total.rawValue, buffer.readableBytes <= size.rawValue else { throw .inbound }
+        guard buffer.readableBytes <= FusionStatic.total.rawValue, buffer.readableBytes <= ceiling.rawValue else { throw .inbound }
         guard buffer.readableBytes >= FusionStatic.header.rawValue else { return .init() }
         while let length = try buffer.length(), buffer.readableBytes >= length && length != .zero {
             guard let opcode = buffer.getInteger(at: buffer.readerIndex, as: UInt8.self) else { throw .opcode }

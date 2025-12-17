@@ -12,7 +12,8 @@ struct NIOFusionTests {
         let invalid = ByteBuffer(bytes: [0x1, 0x0, 0x0, 0x0, 0x6, 0xFF])
         let breakSync = ByteBuffer(bytes: [0x01, 0x00, 0x00, 0x00, 0x01, 0xAA, 0x02, 0x00, 0x00, 0x00, 0x01, 0xBB])
         let zeroLen = ByteBuffer(bytes: [0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00])
-        await #expect(throws: FusionFramerError.inbound) { await framer.clear(); let _ = try await framer.parse(slice: .init(repeating: .zero, count: Int(FusionSize.medium.rawValue)), size: .low) }
+        #expect(throws: FusionFramerError.outbound) { let _ = try FusionFramer.create(message: ByteBuffer(repeating: .zero, count: Int(FusionCeiling.medium.rawValue)), ceiling: .low) }
+        await #expect(throws: FusionFramerError.inbound) { await framer.clear(); let _ = try await framer.parse(slice: .init(repeating: .zero, count: Int(FusionCeiling.medium.rawValue)), ceiling: .low) }
         await #expect(throws: FusionFramerError.invalid) { await framer.clear(); let _ = try await framer.parse(slice: zeroLen) }
         await #expect(throws: FusionFramerError.decode) { await framer.clear(); let _ = try await framer.parse(slice: invalid) }
         await #expect(throws: FusionFramerError.decode) { await framer.clear(); let _ = try await framer.parse(slice: malformed) }

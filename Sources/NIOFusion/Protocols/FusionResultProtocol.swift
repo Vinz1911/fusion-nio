@@ -14,8 +14,11 @@ public protocol FusionResultProtocol: Sendable {
     /// The `FusionMessage`
     var message: FusionMessage { get }
     
-    /// The current `NIOAsyncChannelOutboundWriter` from the connection
-    var outbound: NIOAsyncChannelOutboundWriter<ByteBuffer> { get }
+    /// Send data on the current channel
+    ///
+    /// - Parameters:
+    ///   - message: the `FusionMessage` to send
+    func send(_ message: FusionMessage) async throws -> Void
 }
 
 // MARK: - Fusion Endpoint Protocol -

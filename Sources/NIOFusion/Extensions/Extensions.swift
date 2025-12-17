@@ -10,39 +10,11 @@ import Logging
 import NIOCore
 import NIOPosix
 
-// MARK: - String -
-
-extension String {
-    /// Prompt logo
-    static let logo = #"""
-    
-           _____   _______________     __________             _____              
-           ___  | / /___  _/_  __ \    ___  ____/___  ___________(_)____________ 
-           __   |/ / __  / _  / / /    __  /_   _  / / /_  ___/_  /_  __ \_  __ \
-           _  /|  / __/ /  / /_/ /     _  __/   / /_/ /_(__  )_  / / /_/ /  / / /
-           /_/ |_/  /___/  \____/      /_/      \__,_/ /____/ /_/  \____//_/ /_/ 
-    +----------------------------------------------------------------------------------+
-    | A high-performance, low-overhead protocol built on top of TCP.                   |
-    | Support for various types of high performance applications like data transfer.   |
-    | More information can be found at: https://weist.org                              |
-    +----------------------------------------------------------------------------------+
-    """#
-}
-
 // MARK: - Logger -
 
 extension Logger {
-    /// Singleton to access logger
+    /// Access logger directly
     static let shared = Logger(label: .init())
-    
-    /// Log channel `IOError`
-    ///
-    /// - Parameter error: the `Error`
-    func ioerror(from error: Error) -> Void {
-        guard let error = error as? IOError else { return }
-        guard error.errnoCode != ECONNRESET, error.errnoCode != EPIPE, error.errnoCode != EBADF else { return }
-        Logger.shared.error("\(error)")
-    }
 }
 
 // MARK: - Int -
@@ -51,7 +23,7 @@ extension UInt32 {
     /// The fusion frame payload length
     var payload: Int? {
         guard self >= FusionStatic.header.rawValue else { return nil }
-        return Int(self) - FusionStatic.header.rawValue
+        return Int(self) - Int(FusionStatic.header.rawValue)
     }
 }
 
@@ -74,7 +46,7 @@ extension ByteBuffer {
     ///   - length: the length of the payload
     /// - Returns: the `FusionMessage`
     func decode(with opcode: UInt8, from length: UInt32) -> FusionFrame? {
-        guard let length = length.payload, let payload = self.getSlice(at: FusionStatic.header.rawValue, length: length) else { return nil }
-        return FusionOpcode(rawValue: opcode)?.type.decode(from: payload)
+        guard let length = length.payload, let payload = self.getSlice(at: Int(FusionStatic.header.rawValue), length: length) else { return nil }
+        return FusionOpcode(rawValue: opcode)?.rawType.decode(from: payload)
     }
 }
