@@ -85,6 +85,5 @@ private extension FusionBootstrap {
                 for message in messages { continuation.yield(.init(id: id, message: message, local: local, remote: remote, outbound: outbound, ceiling: parameters.ceiling)) }
             }
         }
-        await framer.clear()
     }
 }
