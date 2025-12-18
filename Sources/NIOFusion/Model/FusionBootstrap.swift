@@ -75,7 +75,6 @@ private extension FusionBootstrap {
     ///
     /// - Parameters:
     ///   - channel: the `NIOAsyncChannel`
-    ///   - completion: the parsed `FusionMessage` and `NIOAsyncChannelOutboundWriter`
     private func append(channel: NIOAsyncChannel<ByteBuffer, ByteBuffer>) async throws -> Void {
         let framer = FusionFramer(), id = UUID()
         let local = channel.channel.localAddress, remote = channel.channel.remoteAddress
