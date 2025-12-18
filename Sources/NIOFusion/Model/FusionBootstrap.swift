@@ -30,8 +30,8 @@ public struct FusionBootstrap: FusionBootstrapProtocol, Sendable {
     
     /// Starts the `FusionBootstrap` and binds the server to port and address
     ///
-    /// Invokes the individual channel listner
-    public func run() async throws -> Void {
+    /// Invokes the individual channel listener
+    public func bind() async throws -> Void {
         let group = MultiThreadedEventLoopGroup(numberOfThreads: threads)
         let bootstrap = ServerBootstrap(group: group)
             .serverChannelOption(.socketOption(.so_reuseaddr), value: 1)

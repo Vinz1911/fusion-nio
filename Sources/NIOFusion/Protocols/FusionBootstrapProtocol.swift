@@ -20,8 +20,8 @@ public protocol FusionBootstrapProtocol: Sendable {
 
     /// Starts the `FusionBootstrap` and binds the server to port and address
     ///
-    /// Invokes the individual channel listner
-    func run() async throws -> Void
+    /// Invokes the individual channel listener
+    func bind() async throws -> Void
 
     /// Receive `FusionResult` from stream
     ///
