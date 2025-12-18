@@ -22,7 +22,7 @@ actor FusionFramer: FusionFramerProtocol {
     ///   - message: generic type which conforms to `FusionMessage`
     ///   - ceiling: the inbound buffer size limit from `FusionCeiling`
     /// - Returns: the message frame as `ByteBuffer`
-    static nonisolated func create<T: FusionFrame>(message: T, ceiling: FusionCeiling = .unlimited) throws(FusionFramerError) -> ByteBuffer {
+    static nonisolated func create<Message: FusionFrame>(message: Message, ceiling: FusionCeiling = .unlimited) throws(FusionFramerError) -> ByteBuffer {
         guard message.size <= FusionStatic.total.rawValue, message.size <= ceiling.rawValue else { throw .outbound }
         var frame = ByteBuffer(); frame.writeInteger(message.opcode); frame.writeInteger(UInt32(message.size), endianness: .big, as: UInt32.self); frame.writeImmutableBuffer(message.encode)
         return frame

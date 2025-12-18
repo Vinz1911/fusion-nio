@@ -43,7 +43,7 @@ protocol FusionFramerProtocol: Sendable {
     ///   - message: generic type which conforms to `FusionMessage`
     ///   - ceiling: the inbound buffer size limit from `FusionCeiling`
     /// - Returns: the message frame as `ByteBuffer`
-    static nonisolated func create<T: FusionFrame>(message: T, ceiling: FusionCeiling) throws(FusionFramerError) -> ByteBuffer
+    static nonisolated func create<Message: FusionFrame>(message: Message, ceiling: FusionCeiling) throws(FusionFramerError) -> ByteBuffer
     
     /// Parse a `FusionMessage` conform frame
     ///
