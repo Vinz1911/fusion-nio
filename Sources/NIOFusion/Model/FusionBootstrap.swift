@@ -59,6 +59,13 @@ public struct FusionBootstrap: FusionBootstrapProtocol, Sendable {
     public func receive() -> AsyncStream<FusionResult> {
         return stream
     }
+    
+    /// The active channel count
+    ///
+    /// - Returns: the current channel count as `Int`
+    public func count() async -> Int {
+        await registry.count()
+    }
 }
 
 // MARK: - Private API Extension -
@@ -88,7 +95,7 @@ private extension FusionBootstrap {
     ///   - channel: the `NIOAsyncChannel`
     private func append(channel: NIOAsyncChannel<ByteBuffer, ByteBuffer>) async throws -> Void {
         let framer = FusionFramer(), id = UUID(), local = channel.channel.localAddress, remote = channel.channel.remoteAddress
-        defer { Task { await registry.remove(id: id); print("Count: \(await registry.storage.count)") } }
+        defer { Task { await registry.remove(id: id) } }
         try await channel.executeThenClose { inbound, outbound in
             await registry.append(id: id, outbound: outbound)
             for try await buffer in inbound {

@@ -35,4 +35,9 @@ public protocol FusionBootstrapProtocol: Sendable {
     ///
     /// An continues `AsyncStream` returns `FusionResult`
     func receive() -> AsyncStream<FusionResult>
+    
+    /// The active channel count
+    ///
+    /// - Returns: the current channel count as `Int`
+    func count() async -> Int
 }

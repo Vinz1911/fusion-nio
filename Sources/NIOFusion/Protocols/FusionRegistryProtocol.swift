@@ -1,39 +1,34 @@
 //
-//  FusionRegistry.swift
+//  FusionRegistryProtocol.swift
 //  NIOFusion
 //
 //  Created by Vinzenz Weist on 18.12.25.
-//  Copyright © 2025 Vinzenz Weist. All rights reserved.
 //
 
 import Foundation
 import NIOCore
 
-// MARK: - Fusion Registry -
-
-actor FusionRegistry: FusionRegistryProtocol, Sendable {
-    private var storage: [UUID: NIOAsyncChannelOutboundWriter<ByteBuffer>] = [:]
-    
+protocol FusionRegistryProtocol: Sendable {
     /// The storage count
     ///
     /// - Returns: the count as `Int`
-    func count() async -> Int { return storage.count }
+    func count() async -> Int
     
     /// Append a `NIOAsyncChannelOutboundWriter`
     ///
     /// - Parameters:
     ///   - id: the channel `UUID`
     ///   - outbound: the channel `NIOAsyncChannelOutboundWriter`
-    func append(id: UUID, outbound: NIOAsyncChannelOutboundWriter<ByteBuffer>) async -> Void { storage[id] = outbound }
+    func append(id: UUID, outbound: NIOAsyncChannelOutboundWriter<ByteBuffer>) async -> Void
     
     /// Fetch a `NIOAsyncChannelOutboundWriter`
     ///
     /// - Parameter id: the channel `UUID`
     /// - Returns: the channel `NIOAsyncChannelOutboundWriter`
-    func fetch(from id: UUID) async -> NIOAsyncChannelOutboundWriter<ByteBuffer>? { return storage[id] }
+    func fetch(from id: UUID) async -> NIOAsyncChannelOutboundWriter<ByteBuffer>?
     
     /// Remove a `NIOAsyncChannelOutboundWriter`
     ///
     /// - Parameter id: the channel `UUID`
-    func remove(id: UUID) async -> Void { storage.removeValue(forKey: id) }
+    func remove(id: UUID) async -> Void
 }
