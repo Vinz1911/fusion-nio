@@ -16,7 +16,6 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-nio", from: "2.0.0"),
-        .package(url: "https://github.com/apple/swift-log", from: "1.6.0"),
     ],
     targets: [
         .target(
@@ -24,7 +23,6 @@ let package = Package(
             dependencies: [
                 .product(name: "NIOCore", package: "swift-nio"),
                 .product(name: "NIOPosix", package: "swift-nio"),
-                .product(name: "Logging", package: "swift-log"),
             ]
         ),
         .testTarget(
