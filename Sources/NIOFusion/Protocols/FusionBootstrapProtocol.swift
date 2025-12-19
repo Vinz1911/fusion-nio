@@ -33,11 +33,11 @@ public protocol FusionBootstrapProtocol: Sendable {
     
     /// Receive `FusionResult` from stream
     ///
-    /// An continues `AsyncStream` returns `FusionResult`
+    /// - Returns: an continues `AsyncStream` containing `FusionResult`
     func receive() -> AsyncStream<FusionResult>
     
-    /// The active channel count
+    /// Fetch current active channel `UUID`s
     ///
-    /// - Returns: the current channel count as `Int`
-    func count() async -> Int
+    /// - Returns: an array containing all `UUID`s
+    func fetch() async -> [UUID]
 }

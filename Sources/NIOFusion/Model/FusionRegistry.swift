@@ -14,17 +14,17 @@ import NIOCore
 actor FusionRegistry: FusionRegistryProtocol, Sendable {
     private var storage: [UUID: NIOAsyncChannelOutboundWriter<ByteBuffer>] = [:]
     
-    /// The storage count
-    ///
-    /// - Returns: the count as `Int`
-    func count() async -> Int { return storage.count }
-    
     /// Append a `NIOAsyncChannelOutboundWriter`
     ///
     /// - Parameters:
     ///   - id: the channel `UUID`
     ///   - outbound: the channel `NIOAsyncChannelOutboundWriter`
     func append(id: UUID, outbound: NIOAsyncChannelOutboundWriter<ByteBuffer>) async -> Void { storage[id] = outbound }
+    
+    /// Fetch all `UUID`s from the registry
+    ///
+    /// - Returns: an array of all current channel `UUID`s
+    func fetch() async -> [UUID] { return Array(storage.keys) }
     
     /// Fetch a `NIOAsyncChannelOutboundWriter`
     ///

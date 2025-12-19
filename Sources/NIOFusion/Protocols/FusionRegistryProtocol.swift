@@ -9,17 +9,17 @@ import Foundation
 import NIOCore
 
 protocol FusionRegistryProtocol: Sendable {
-    /// The storage count
-    ///
-    /// - Returns: the count as `Int`
-    func count() async -> Int
-    
     /// Append a `NIOAsyncChannelOutboundWriter`
     ///
     /// - Parameters:
     ///   - id: the channel `UUID`
     ///   - outbound: the channel `NIOAsyncChannelOutboundWriter`
     func append(id: UUID, outbound: NIOAsyncChannelOutboundWriter<ByteBuffer>) async -> Void
+    
+    /// Fetch all `UUID`s from the registry
+    ///
+    /// - Returns: an array of all current channel `UUID`s
+    func fetch() async -> [UUID]
     
     /// Fetch a `NIOAsyncChannelOutboundWriter`
     ///
